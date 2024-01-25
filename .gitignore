@@ -1,5 +1,7 @@
 
 tests.ipynb
+crawled_webpages.txt
+to_be_crawled_webpages.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

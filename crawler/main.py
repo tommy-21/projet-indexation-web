@@ -18,25 +18,41 @@ def get_robotstxt(url):
 
 
 def fetch_and_parse(url):
-    encoded_url = quote(url, safe='/:?=&')
+
+    robotstxt = get_robotstxt(url)
+    allowed = True
+    
+    if robotstxt:
+        rp = Protego.parse(robotstxt)
+        allowed = rp.can_fetch(url, "*")
+    
 
     links = []
-    response = requests.get(encoded_url)
 
-    if response.status_code == 200:
-        page = response.text
-        soup = BeautifulSoup(page, 'html.parser')
-        a_tags = soup.find_all('a')
+    if allowed:
+        try:
+            response = requests.get(url)
 
-        # Extration des liens
-        for a_tag in a_tags:
-            href = a_tag.get('href')
-            if href:
-                links.append(href)
+            if response.status_code == 200:
+                page = response.text
+                soup = BeautifulSoup(page, 'html.parser')
+                a_tags = soup.find_all('a')
+
+                # Extration des liens
+                for a_tag in a_tags:
+                    href = a_tag.get('href')
+                    if href:
+                        links.append(href)
+            else:
+                print("Failed to retrieve the webpage from url", url)
+                page = None
+
+        except:
+            print("Something went wrong for", url) 
+            page = None
+    
     else:
-        print("Failed to retrieve the webpage from url", url)
         page = None
-
 
     # Filtrage des liens autorisés par le robots.txt
     robotstxt = get_robotstxt(url)
@@ -61,7 +77,7 @@ if __name__ == '__main__':
     for url in frontier:
         # récupération de la page et des liens présents sur la page analysée
         page, urls_found = fetch_and_parse(url)
-        time.sleep(3)
+        time.sleep(5)
 
         if page:
             # ajout des nouveaux liens à la liste d'attente
@@ -72,7 +88,7 @@ if __name__ == '__main__':
             # mise à jour de la frontier et du discovered
             print("Done for", url)
             discovered.append(url)
-            frontier.remove(url)
+            # frontier.remove(url)
 
         # arret si nombre max de page atteint
         if len(discovered) >= termination :
@@ -82,4 +98,8 @@ if __name__ == '__main__':
     # ecriture dans un fichier txt de toutes les urls trouvées
     with open('crawled_webpages.txt', 'w') as file:
         for item in discovered:
+            file.write(str(item) + '\n')
+
+    with open('to_be_crawled_webpages.txt', 'w') as file:
+        for item in frontier:
             file.write(str(item) + '\n')
