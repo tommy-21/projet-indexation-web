@@ -2,67 +2,105 @@ import time
 from protego import Protego
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import quote
 
 
 
 def get_robotstxt(url):
+    '''
+    Permet de d'obtenir le robots.txt pour une adresse url donnée
+
+    Args:
+        url (str): Le lien
+
+    Returns:
+        str or None: Le contenu brut (html) de la page
+    '''
     base_url = url.split('/')[0] + '//' + url.split('/')[2]
     robots_url = base_url + '/robots.txt'
-    response = requests.get(robots_url)
+    timeout_duration = 5
+    robots = None
+
+    try:
+        response = requests.get(robots_url, timeout=timeout_duration)
+        if response.status_code == 200:
+            robots = response.text
+    except requests.Timeout:
+        print(f"Request timed out after {timeout_duration} seconds for the robots.txt of {url}")
+    except Exception as e:
+        print(f'Exception {e} occured while trying to get the robots.txt of {url}')
+    
+    return robots
+
+
+def robotstxt_authorization(url):
+    '''
+    Vérifie auprès du robots.txt si l'url peut être crawlé
+
+    Args:
+        url (str): Le lien
+
+    Returns:
+        bool: True si Oui, False si Non
+    '''
+    authorization = True
+    robotstxt = get_robotstxt(url)
+
+    if robotstxt:
+        rp = Protego.parse(robotstxt)
+        authorization = rp.can_fetch(url, "*")
+
+    return authorization
+
+
+
+def fetch(url):
+    '''
+    Recupère le contenu de la page web désignée par le lien.
+
+    Args:
+        url (str): Le lien
+
+    Returns:
+        str or None: Le contenu brut (html) de la page
+    '''
+    response = requests.get(url)
 
     if response.status_code == 200:
-        return response.text
+        page = response.text
     else:
-        return None
-
-
-def fetch_and_parse(url):
-
-    robotstxt = get_robotstxt(url)
-    allowed = True
-    
-    if robotstxt:
-        rp = Protego.parse(robotstxt)
-        allowed = rp.can_fetch(url, "*")
-    
-
-    links = []
-
-    if allowed:
-        try:
-            response = requests.get(url)
-
-            if response.status_code == 200:
-                page = response.text
-                soup = BeautifulSoup(page, 'html.parser')
-                a_tags = soup.find_all('a')
-
-                # Extration des liens
-                for a_tag in a_tags:
-                    href = a_tag.get('href')
-                    if href:
-                        links.append(href)
-            else:
-                print("Failed to retrieve the webpage from url", url)
-                page = None
-
-        except:
-            print("Something went wrong for", url) 
-            page = None
-    
-    else:
+        print("Failed to retrieve the webpage from url", url)
         page = None
 
-    # Filtrage des liens autorisés par le robots.txt
-    robotstxt = get_robotstxt(url)
-    if robotstxt:
-        rp = Protego.parse(robotstxt)
-        allowed_links = [link for link in links if rp.can_fetch(link, "*")]
-    else:
-        allowed_links = links
+    return page
 
-    return (page, allowed_links)
+
+
+def parse(page, frontier, limit=5):
+    '''
+    Récolte les liens contenus dans une page
+
+    Args:
+        page (str): La page à parcourir
+        frontier (List[str]): Liste de liens deja repertoriés
+        limit (int): nombre maximum de liens à récupérer
+
+    Returns:
+        str or None: Le contenu brut (html) de la page
+    '''
+    links = []
+    soup = BeautifulSoup(page, 'html.parser')
+    a_tags = soup.find_all('a')
+
+    # Extration des liens
+    for a_tag in a_tags:
+        link = a_tag.get('href')
+        if link and link[:4]=='http' and (link not in links) and (link not in frontier):
+            if robotstxt_authorization(link):
+                links.append(link)
+                if len(links)>=limit: 
+                    break
+
+    return links
 
 
 
@@ -73,22 +111,16 @@ if __name__ == '__main__':
     frontier = seed     # file d'attente des requêtes initialisé par le seed
     discovered = []     # liste des liens déjà téléchargés 
     
-    
     for url in frontier:
         # récupération de la page et des liens présents sur la page analysée
-        page, urls_found = fetch_and_parse(url)
+        page_content = fetch(url)
         time.sleep(5)
+        urls_found = parse(page_content, frontier=frontier)
 
-        if page:
-            # ajout des nouveaux liens à la liste d'attente
-            new_urls_found = []
-            new_urls_found = [link for link in urls_found if (link not in frontier and len(new_urls_found)<5)]
-            frontier.extend(new_urls_found)
-
-            # mise à jour de la frontier et du discovered
-            print("Done for", url)
-            discovered.append(url)
-            # frontier.remove(url)
+        # mise à jour de la frontier et du discovered
+        frontier.extend(urls_found)
+        print("Done for", url)
+        discovered.append(url)
 
         # arret si nombre max de page atteint
         if len(discovered) >= termination :
