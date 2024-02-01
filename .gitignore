@@ -3,6 +3,7 @@ tests.ipynb
 crawled_webpages.txt
 to_be_crawled_webpages.txt
 main_v2.py
+crawler_database.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
