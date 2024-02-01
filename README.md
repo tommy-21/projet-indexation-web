@@ -17,8 +17,11 @@ python main.py
 ```
 Pour cette version la plus simple du crawler, les limites de nombres de documents à récupérer sont de 5 liens par pages et 50 pages au total. 
 
-Le temps d'attentes entre deux téléchargements de pages est de 5s minimum (les requêtes aux robots.txt et au sitemaps.xml ne sont pas considérées)
+Le programme retourne le fichier `crawled_webpages.txt` contenant les urls dont les pages ont été téléchargées.
+
+Le temps d'attente entre deux téléchargements de pages est de 5s entre chaque appel (les requêtes aux robots.txt ne sont pas considérées). Ce temps de 5s prend en compte la durée de téléchargement de la page précédente.
 
 ### Arguments
 Pour le lancement de l'exécution du ficher main.py, on peut ajouter les arguments suivants: 
-- `sitemaps` : pour inclure la recherche les sitemaps et y récupérer des liens. Les limites de nombre maximum de document à récupérer passent à 100 pages au total et 20 liens par page. 
+- `sitemaps` : pour inclure la recherche les sitemaps et y récupérer des liens. La limite de nombre maximum de document à récupérer au total passe à 100 pages. On se limitera aussi à 15 liens par sitemap visitées.
+- `database` : pour créer une base de données relationnelle pour stocker les pages web trouvées ainsi que leur dates et heures de parsing respectifs. Les liens retournés dans le fichier final `crawled_webpages.txt` sont ceux enrégistrés dans la base de données avec leur âge.
