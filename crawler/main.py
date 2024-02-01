@@ -69,7 +69,7 @@ def fetch(url):
     download_time = 0
 
     try:
-        response = requests.get(url, timeout_duration)
+        response = requests.get(url, timeout=timeout_duration)
         if response.status_code == 200:
             page = response.text
             download_time = float(response.elapsed.total_seconds())
