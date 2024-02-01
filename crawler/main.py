@@ -69,7 +69,7 @@ def fetch(url):
     download_time = 0
 
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout_duration)
         if response.status_code == 200:
             page = response.text
             download_time = float(response.elapsed.total_seconds())
@@ -182,7 +182,7 @@ def main(database, sitemaps):
 
     if sitemaps:
         retrieved_sitemaps_urls = []
-        termination = 100
+        termination = 60
     
     # BOUCLE POUR CHAQUE LIEN DE LA FRONTIER
     for url in frontier:
