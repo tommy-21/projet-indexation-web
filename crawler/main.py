@@ -218,7 +218,7 @@ def main(database, sitemaps):
     # ecriture dans un fichier txt de toutes les urls trouvées
     with open('crawled_webpages.txt', 'w') as file:
         if database:
-            cursor.execute("SELECT * FROM items")
+            cursor.execute("SELECT * FROM crawled_pages")
             results = cursor.fetchall()
             for item in results:
                 age = compute_age(item[2])
