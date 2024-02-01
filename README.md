@@ -24,5 +24,5 @@ Le temps d'attente entre deux téléchargements de pages est de 5s entre chaque 
 
 ### Arguments
 Pour le lancement de l'exécution du ficher main.py, on peut ajouter les arguments suivants: 
-- `sitemaps` : pour inclure la recherche les sitemaps et y récupérer des liens. La limite de nombre maximum de document à récupérer au total passe à 100 pages. On se limitera aussi à 15 liens par sitemap visitées.
+- `sitemaps` : pour inclure la recherche les sitemaps et y récupérer des liens. La limite de nombre maximum de document à récupérer au total passe à 60 pages. On se limitera aussi à 15 liens par sitemap visitées.
 - `database` : pour créer une base de données relationnelle pour stocker les pages web trouvées ainsi que leur dates et heures de parsing respectifs. Les liens retournés dans le fichier final `crawled_webpages.txt` sont ceux enrégistrés dans la base de données avec leur âge.
