@@ -5,6 +5,15 @@ to_be_crawled_webpages.txt
 main_v2.py
 crawler_database.db
 
+tests_index.ipynb
+mon_stemmer.title.non_pos_index.json
+mon_stemmer.title.pos_index.json
+title.non_pos_index.json
+title.pos_index.json
+index_test.json
+metadata.json
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
