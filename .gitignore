@@ -13,6 +13,11 @@ title.pos_index.json
 index_test.json
 metadata.json
 
+tf_title.json
+idf_title.json
+tf_content.json
+idf_content.json
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

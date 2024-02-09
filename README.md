@@ -7,6 +7,7 @@ Ce repo regroupes les différents TP ci dessous :
 
 1. [TP1 - Crawler](#tp1---crawler)
 2. [TP2 - Création d'index](#tp2---index-creation)
+2. [TP3 - Expansion de requête et ranking](#tp3---request-expansion-and-ranking)
 
 
 ## TP1 - Crawler 
@@ -57,3 +58,33 @@ Le lancement de l'exécution du ficher main.py peut se faire suivi des arguments
 - Mettre les deux arguments précédents à la fois renverra en plus un quatrième index, index positionnel obtenu à partir des données stemmé et renvoyé dans le fichier `mon_stemmer.title.pos_index.json` (tout ça est un peu chronophage par contre...)
 
 Tout les index sont faits avec les titres.
+
+
+
+## TP3 - Request Expansion and Ranking
+
+### Exécution simple
+Pour exécuter le code pour la création d'index :
+- Cloner le repo et se mettre dans le dossier `index_tp3/`
+- S'assurer que toutes les dépendances sont installés
+- Lancer l'exécution du fichier main.py
+
+```
+git clone https://github.com/tommy-21/projet-indexation-web.git && cd projet-indexation-web/index_tp/
+pip install -r requirements.txt
+python main.py
+```
+
+Vous serez en suite invité (après quelques secondes...) à entrer votre requête. Ensuite appuyez sur "Entrée" et les résultats s'afichent.
+
+Les résultats sont aussi stockés dans un fichier `results.json` avec d'autres informations pratiques.
+
+### Détails techniques
+Il n'y a pas ici d'arguments supplémentaires mais la fonction de ranking bm25 a été implémentée et est utilisée par défaut.
+
+Uniquement l'option `ET` a été implémentée, c'est-à-dire, qu'on ne renvoie que des documents dans lesquels on retrouve tous les tokens contenus dans la requête utilisateur.
+
+La première exécution du script peut prendre un peu de temps. Ceci est dû au calcul des valeurs TF et IDF de chaque token pour chaque document. Ces valeurs seront stockées dans des fichiers .json nommées respectivement `tf_title.json`, `idf_title.json`, `tf_content.json` et `idf_content.json` (TFs et IDFs pour chacun des index : titre et contenu). Ces fichiers vont justes être chargés puis réutilisés les prochaines fois pour éviter d'avoir la même latence à chaque exécution.  
+
+Les features pour le ranking ont été calculées séparément pour les titres et pour les contenus des pages avec une très forte importance donnée au features concernant les titres dans la fonction de ranking. 
+  
