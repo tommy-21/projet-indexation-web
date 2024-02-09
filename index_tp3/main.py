@@ -4,13 +4,19 @@ import math
 import pandas as pd
 
 def calculer_idf(index, nb_total_documents):
+    '''
+    Calcule l'idf façon bm25
+    '''
     idf_dict = {}
     for token, docs in index.items():
-        idf_dict[token] = math.log(nb_total_documents / float(len(docs)))
+        idf_dict[token] = math.log((nb_total_documents - float(len(docs)) + 0.5) / (float(len(docs)) + 0.5) + 1)
     return idf_dict
 
 
 def calculer_tf_par_document(index):
+    '''
+    Calcule le tf pour chaque document et token
+    '''
     tf_par_document = {}
     for token, docs in index.items():
         for docId, info in docs.items():
@@ -22,6 +28,7 @@ def calculer_tf_par_document(index):
         tf_par_document[docId]["| |"] = sum([tf_par_document[docId][token] for token in tf_par_document[docId].keys() if token != "| |"])
 
     return tf_par_document
+
 
 def calculer_proximite(tokens_requete, positions_tokens):
     """
@@ -49,10 +56,16 @@ def calculer_proximite(tokens_requete, positions_tokens):
     if distances:
         return sum(distances) / len(distances)
     else:
-        return 1000000  # Retourner 1 000 000 000 si aucun couple de tokens n'est trouvé consécutifs 
+        return 1000  # Retourner 1 000 si aucun couple de tokens n'est trouvé consécutifs 
+
+def calculer_bm25(idf, tf, longueur_doc, longueur_moyenne_documents, k1=1.5, b=0.75):
+    '''
+    Calcule le bm25.
+    '''
+    return idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - b + b * (longueur_doc / longueur_moyenne_documents))))
 
 
-
+################################### FONCTION MAIN ##############################################################""
 def main():
     # Chargement des fichiers json
     # documents
@@ -71,39 +84,39 @@ def main():
         content_index = json.load(file)
     
 
-    # # Chargement des mesures TF et IDF
-    # if os.path.exists("tf_title.json") and os.path.exists("tf_content.json") and os.path.exists("idf_title.json") and os.path.exists("idf_content.json"):
-    #     with open("tf_title.json", 'r') as file:
-    #         tf_title = json.load(file)
-    #     with open("tf_content.json", 'r') as file:
-    #         tf_content = json.load(file)
-    #     with open("idf_title.json", 'r') as file:
-    #         idf_title = json.load(file)
-    #     with open("idf_content.json", 'r') as file:
-    #         idf_content = json.load(file)
+    # Chargement des mesures TF et IDF
+    if os.path.exists("tf_title.json") and os.path.exists("tf_content.json") and os.path.exists("idf_title.json") and os.path.exists("idf_content.json"):
+        with open("tf_title.json", 'r') as file:
+            tf_title = json.load(file)
+        with open("tf_content.json", 'r') as file:
+            tf_content = json.load(file)
+        with open("idf_title.json", 'r') as file:
+            idf_title = json.load(file)
+        with open("idf_content.json", 'r') as file:
+            idf_content = json.load(file)
 
-    # else:    
-    #     nb_docs = len(documents)
-    #     tf_title = calculer_tf_par_document(title_index)
-    #     tf_content = calculer_tf_par_document(content_index)
-    #     idf_title = calculer_idf(title_index, nb_docs)
-    #     idf_content = calculer_idf(content_index, nb_docs)
+    else:    
+        nb_docs = len(documents)
+        tf_title = calculer_tf_par_document(title_index)
+        tf_content = calculer_tf_par_document(content_index)
+        idf_title = calculer_idf(title_index, nb_docs)
+        idf_content = calculer_idf(content_index, nb_docs)
 
-    #     with open("tf_title.json", 'w') as file:
-    #         json.dump(tf_title, file, indent=4)
-    #         print("tf_title saved!")
+        with open("tf_title.json", 'w') as file:
+            json.dump(tf_title, file, indent=4)
+            print("tf_title saved!")
 
-    #     with open("tf_content.json", 'w') as file:
-    #         json.dump(tf_content, file, indent=4)
-    #         print("tf_content saved!")
+        with open("tf_content.json", 'w') as file:
+            json.dump(tf_content, file, indent=4)
+            print("tf_content saved!")
 
-    #     with open("idf_title.json", 'w') as file:
-    #         json.dump(idf_title, file, indent=4)
-    #         print("idf_title saved!")
+        with open("idf_title.json", 'w') as file:
+            json.dump(idf_title, file, indent=4)
+            print("idf_title saved!")
 
-    #     with open("idf_content.json", 'w') as file:
-    #         json.dump(idf_content, file, indent=4)
-    #         print("idf_content saved!")
+        with open("idf_content.json", 'w') as file:
+            json.dump(idf_content, file, indent=4)
+            print("idf_content saved!")
 
 
     # Demander à l'utilisateur d'entrer une requête
@@ -141,6 +154,8 @@ def main():
     # Calcul des features des documents:
     features_documents = dict()
     if documents_restants:
+        taille_moy_docs_contents = sum([tf_content[docID]['| |'] for docID in tf_content.keys()])/len(tf_content.keys())
+        taille_moy_docs_titles = sum([tf_title[docID]['| |'] for docID in tf_title.keys()])/len(tf_content.keys())
         for docs in documents_restants:
             docID = docs[1]
             features_documents[docID] = {}
@@ -148,6 +163,10 @@ def main():
             features_documents[docID]["Occurrence_content"] = 0
             features_documents[docID]["Proximite_title"] = 0
             features_documents[docID]["Proximite_content"] = 0
+            features_documents[docID]["TF_IDF_title"] = 0
+            features_documents[docID]["TF_IDF_content"] = 0 
+            features_documents[docID]["BM25_title"] = 0
+            features_documents[docID]["BM25_content"] = 0
 
             # Nombres d'apparition ----------------------------
             features_documents[docID]["Occurrence_title"] = 0 
@@ -173,25 +192,36 @@ def main():
                         positions_tokens_content[token] = content_index[token][docID]["positions"]
                 features_documents[docID]["Proximite_content"] = calculer_proximite(requete, positions_tokens_content)
 
-            # # TF et IDF
-            # features_documents[docID]["TF"] = sum([tf_title[docID][tok]/tf_title[docID]['| |'] for tok in requete]) \
-            #                                     + sum([tf_content[docID][tok]/tf_content[docID]['| |'] for tok in requete])
-            # features_documents[docID]["IDF"] = sum([idf_title[tok] for tok in requete]) \
-            #                                      + sum([tf_content[tok] for tok in requete])
+            # TF-IDF ------------------------------------------
+            if docs[0] == "title" or docs[0] == "both":
+                features_documents[docID]["TF_IDF_title"] = sum([idf_title[tok]*tf_title[docID][tok]/tf_title[docID]['| |'] for tok in requete if token in title_index])
+            if docs[0] == "content" or docs[0] == "both":
+                features_documents[docID]["TF_IDF_content"] = sum([idf_content[tok]*tf_content[docID][tok]/tf_content[docID]['| |'] for tok in requete if token in content_index])
+
+            # BM25 --------------------------------------------
+            if docs[0] == "title" or docs[0] == "both":
+                features_documents[docID]["BM25_title"] = sum([calculer_bm25(idf_title[tok], tf_title[docID][tok]/tf_title[docID]['| |'], tf_title[docID]['| |'], 
+                                                                         taille_moy_docs_titles) for tok in requete])
+            if docs[0] == "content" or docs[0] == "both":
+                features_documents[docID]["BM25_content"] = sum([calculer_bm25(idf_content[tok], tf_content[docID][tok]/tf_content[docID]['| |'], tf_content[docID]['| |'], 
+                                                                         taille_moy_docs_contents) for tok in requete])
+
+            
 
         # Calcul des scores
         scores = {}
         for docid in features_documents.keys():
-            scores[docid] = 5*features_documents[docid]["Occurrence_title"] + features_documents[docid]["Occurrence_content"] \
-                            - 0.1*features_documents[docid]["Proximite_title"] - 0.5*features_documents[docid]["Proximite_content"]
+            scores[docid] = 0.5*features_documents[docid]["Occurrence_title"] + 0.1*features_documents[docid]["Occurrence_content"] \
+                            - 0.1*features_documents[docid]["Proximite_title"] - 0.5*features_documents[docid]["Proximite_content"] \
+                            + 50*features_documents[docid]["TF_IDF_title"] + 10*features_documents[docid]["TF_IDF_content"] \
+                            + 100*features_documents[docid]["BM25_title"] + 20*features_documents[docid]["BM25_content"]
             
-        
+
         # Récupération des documents et préparation des résultats
         liste_id_docs_pertinents = sorted(scores, key=scores.get, reverse=True)
         documents_df = pd.DataFrame(documents, dtype=str)
         documents_df = documents_df.set_index("id")
-        docs_pertinents = [{"Id":docid,
-                            "Titre":documents_df.loc[docid, "title"], 
+        docs_pertinents = [{"Titre":documents_df.loc[docid, "title"], 
                             "Url":documents_df.loc[docid, "url"]} for docid in liste_id_docs_pertinents]
         
         resultats["Documents par ordre de pertinence"] = docs_pertinents
